@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useState } from "react";
 import { trpc } from "../utils/trpc";
 
 const styles: { [key: string]: CSSProperties } = {
@@ -12,7 +12,7 @@ const styles: { [key: string]: CSSProperties } = {
   },
   innerContainer: {
     width: "50%",
-    height: "50%",
+    //height: "50%",
     padding: "20px",
     borderRadius: "15px",
     backgroundColor: "#ccd8e1",
@@ -32,6 +32,8 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: "4px",
     border: "none",
     outline: "none",
+    backgroundColor:'#fff',
+    color: "#333",
   },
   list: {
     listStyleType: "none",
@@ -61,8 +63,21 @@ const styles: { [key: string]: CSSProperties } = {
 };
 
 const TodoList = () => {
-    const test = trpc.test.useQuery();
-    console.log(test.data);
+  const [inputValue, setInputValue] = useState("");
+    //const test = trpc.test.useQuery();
+    //console.log(test.data);
+    const allTodos = trpc.getTodos.useQuery();
+    //console.log(allTodos.data);
+    const addTodo = trpc.addTodo.useMutation(
+      {onSettled : () => {
+        allTodos.refetch();
+      }}
+    );
+    const deleteTodo = trpc.deleteTodo.useMutation(
+      {onSettled : () => {
+        allTodos.refetch();
+      }}
+    );
   return (
     <div style={styles.container}>
       <div style={styles.innerContainer}>
@@ -71,13 +86,16 @@ const TodoList = () => {
           type="text"
           placeholder="What needs to be done?"
           style={styles.input}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)} value={inputValue}
         />
-        <button style={styles.addButton}>Add Todo</button>
+        <button style={styles.addButton} onClick={()=> {addTodo.mutate(inputValue); setInputValue('')}}>Add Todo</button>
         <ul style={styles.list}>
-          <li style={styles.listItem}>
-            TRPCの勉強
-            <span style={styles.deleteButton}>✖</span>
-          </li>
+          {allTodos.data?.map((todo) => (
+            <li key={todo.id} style={styles.listItem}>
+              {todo.content}
+              <span onClick={() => deleteTodo.mutate(todo.id)} style={styles.deleteButton}>✖</span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

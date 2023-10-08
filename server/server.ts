@@ -2,6 +2,7 @@ import express from 'express';
 import {initTRPC} from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import cors from 'cors';
+import z from 'zod'
 
 const app = express();
 const PORT = 3000;
@@ -42,7 +43,22 @@ const appRouter = router({
     getTodos: publicProcedure.query(() => {
         return todoList;
     }),
+    addTodo: publicProcedure.input(z.string()).mutation((req) => {
+       const id = `${Math.random()}`;
+       const todo: Todo = {
+           id,
+        content: req.input
+    }
+    todoList.push(todo)
+    return todoList;
+    }),
+    deleteTodo: publicProcedure.input(z.string()).mutation((req) => {
+        const id = req.input;
+        const index = todoList.findIndex((todo) => todo.id === id);
+        todoList.splice(index, 1);
+        return todoList;
 })
+});
 
 app.use('/trpc', trpcExpress.createExpressMiddleware({router: appRouter}));
 
